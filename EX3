@@ -1,0 +1,336 @@
+
+SELECT COUNT(*) AS record_count FROM station_data;
+-- IT RETURNS RECOUND_COUNT 28000
+
+SELECT COUNT(*) AS record_count FROM station_data
+WHERE tornado =1;
+--- record_count 3000
+
+SELECT year, COUNT(*) AS record_count FROM station_data
+WHERE tornado = 1
+GROUP BY year;
+
+SELECT year, month, COUNT(*) AS record_count FROM station_data
+WHERE tornado =1
+GROUP BY year, month
+
+--GROUP BY 1, 2 (which is especially helpful if our SELECT has long column names or expressions
+-- THE RESULT IS THE SAME AS IN THE ABOVE
+SELECT year, month, COUNT(*) AS record_count FROM station_data
+WHERE tornado =1
+GROUP BY 1,2
+
+SELECT year, month, COUNT(*) AS record_count FROM station_data
+WHERE tornado =1
+GROUP BY year, month
+ORDER BY year DESC, month
+
+--count of snow_depth recordings, which will count the number of non-null values
+SELECT COUNT(snow_depth) AS recorded_snow_depth_count
+FROM station_data
+
+--Aggregate functions such as COUNT(), SUM(), AVG(), MIN(), and MAX() will never 
+--include null values in their calculations.  Only non- null values will be considered.
+-- AGGREGATE FUNCTION 전의 아무것도 없는 항목 MONTH는 GROUP BY에 들어간다.
+SELECT month, AVG(temperature) AS avg_temp
+FROM station_data
+WHERE YEAR >= 2000
+GROUP BY month
+
+-- ROUND 2TH DECIMAL
+SELECT month, round(AVG(temperature),2) AS avg_temp
+FROM station_data
+WHERE year >= 2000
+GROUP BY month
+
+SELECT year, SUM(snow_depth) AS total_snow
+FROM station_data
+WHERE year>= 2000
+GROUP BY year
+
+
+SELECT year,
+SUM(snow_depth) AS total_snow,
+SUM(precipitation) AS total_precipitation,
+MAX(precipitation) AS max_precipitation
+FROM station_data
+WHERE year >=2000
+GROUP BY year
+
+
+SELECT year,
+SUM(precipitation) AS tonado_precipitation
+FROM station_data
+WHERE tornado = 1
+GROUP BY YEAR
+
+/*
+THIS GIVES ERROR 
+You cannot filter on aggregated fields using WHERE
+*
+SELECT year,
+SUM(precipitation) as total_precipitation
+FROM station_data
+WHERE total_precipitation > 30
+GROUP BY year
+*
+ The WHERE keyword filters individual records, but HAVING filters aggregations FUNCTIONS.
+*/
+
+SELECT year,
+SUM(precipitation) AS total_precipitation
+FROM station_data
+GROUP BY year
+HAVING total_precipitation >30
+
+
+SELECT DISTINCT station_number FROM station_data
+
+--You can also get distinct results for more than one column
+SELECT DISTINCT station_number, year FROM station_data
+
+---CASE statement allows us to map one or more conditions
+
+SELECT report_code, YEAR, month, day, wind_speed,
+
+CASE
+    WHEN wind_speed>40 THEN 'HIGH'
+    WHEN wind_speed>=30 AND wind_speed<40 THEN 'MODERATE'
+    ELSE 'LOW'
+END AS wind_severity
+
+FROM station_data
+
+-- MORE EFFICIENT 
+SELECT report_code, year, month, day, wind_speed,
+
+CASE
+    WHEN wind_speed >= 40 THEN 'HIGH'
+    WHEN wind_speed >= 30 THEN 'MODERATE'
+    ELSE 'LOW'
+END as wind_severity
+
+FROM station_data
+
+
+SELECT year,
+CASE
+    WHEN wind_speed >=40 THEN 'HIGH'
+    WHEN wind_speed >=30 THEN 'MODERATE'
+    ELSE 'LOW'
+END AS wind_severity,
+
+COUNT(*) AS record_count
+
+FROM station_data
+GROUP BY 1,2
+    
+--aggregate precipitation into two sums, 
+--tornado_precipitation and non_tornado_precipitation, and GROUP BY year and month
+--Tornado precipitation
+SELECT year, month,
+SUM(precipitation) AS tornado_precipitation
+FROM station_data
+WHERE tornado =1
+GROUP BY year, month
+
+--NON-Tornado precipitation
+SELECT year, month,
+SUM(precipitation) AS non_tornado_precipitation
+FROM station_data
+WHERE tornado = 0
+GROUP BY year, month
+
+-- BUT WE CAN DO TOGETHER AS BELOW
+SELECT year, month,
+
+SUM(CASE WHEN tornado = 1 THEN precipitation ELSE 0 END) as tornado_precipitation,
+
+SUM(CASE WHEN tornado = 0 THEN precipitation ELSE 0 END) as 
+    non_tornado_precipitation
+    
+FROM station_data
+GROUP BY year, month
+
+
+--maximum precipitation when tornadoes were
+-- present and when they were not as follows:
+-- IT'S BETTER TO USE NULL INSTEAD OF 0 SINCE IT CAN AFFACT MIN, MAX, AVG
+SELECT year,
+
+MAX(CASE WHEN tornado=0 THEN precipitation ELSE NULL END) AS max_non_tornado_precipitation,
+
+MAX(CASE WHEN tornado=1 THEN precipitation ELSE NULL END) AS max_tornado_precipitation
+
+FROM station_data
+GROUP BY year
+
+
+SELECT month,
+
+AVG(CASE WHEN rain OR hail THEN temperature ELSE NULL END) AS avg_precipitation_temp,
+AVG(CASE WHEN NOT (rain OR hail) THEN temperature ELSE NULL END) AS avg_non_precipitaion_temp
+
+FROM station_data
+WHERE year > 2000
+GROUP BY month
+
+
+/*
+The INNER JOIN allows us to merge two tables together.
+ But if we are going to merge tables, we need to define a commonality 
+ between the two so records from both tables line up.
+*/
+-- inner join 그냥 join만 쓰는거는 inner join을 의미한다.
+SELECT ORDER_ID,
+CUSTOMER.CUSTOMER_ID,  --여기에만 CUSTOMER가 붙는이유 CUSTOMER_id가 KEY VALUE인데 CUSTOMER TABLE꺼 기준으로 쓰라고
+--because CUSTOMER_ID is in both tables, we had to explicitly choose one (although it should not matter which)
+ORDER_DATE,
+SHIP_DATE,
+NAME,
+STREET_ADDRESS,
+CITY,
+STATE,
+ZIP,
+PRODUCT_ID,
+ORDER_QTY
+
+FROM CUSTOMER INNER JOIN CUSTOMER_ORDER
+ON CUSTOMER.CUSTOMER_ID=CUSTOMER_ORDER.CUSTOMER_ID
+
+-- left join은 left outer join과 같은 의미이다.
+SELECT CUSTOMER.CUSTOMER_ID,
+NAME,
+STREET_ADDRESS,
+CITY,
+STATE,
+ZIP,
+ORDER_DATE,
+SHIP_DATE,
+ORDER_ID,
+PRODUCT_ID,
+ORDER_QTY
+-- LEFT TABLE IS CUSTOMER RIGHT TABLE IS CUSTOMER_ORDER
+FROM CUSTOMER LEFT JOIN CUSTOMER_ORDER
+ON CUSTOMER.CUSTOMER_ID=CUSTOMER_ORDER.CUSTOMER_ID
+
+
+SELECT 
+CUSTOMER.CUSTOMER_ID,
+NAME AS CUSTOMER_NAME
+
+FROM CUSTOMER LEFT JOIN CUSTOMER_ORDER
+ON CUSTOMER.CUSTOMER_ID = CUSTOMER_ORDER.CUSTOMER_ID
+
+WHERE ORDER_ID IS NULL
+
+--------------------------------------------------------------
+SELECT
+ORDER_ID,
+CUSTOMER.CUSTOMER_ID,
+NAME AS CUSTOMER_NAME,
+STREET_ADDRESS,
+CITY,
+STATE,
+ZIP,
+ORDER_DATE,
+PRODUCT_ID,
+DESCRIPTION,
+ORDER_QTY
+
+FROM CUSTOMER 
+
+INNER JOIN CUSTOMER_ORDER
+ON CUSTOMER_ORDER.CUSTOMER_ID = CUSTOMER.CUSTOMER_ID
+
+INNER JOIN PRODUCT
+ON CUSTOMER_ORDER.PRODUCT_ID = PRODUCT.PRODUCT_ID
+
+-----------------------------------------------------------
+SELECT
+ORDER_ID,
+CUSTOMER.CUSTOMER_ID,
+NAME AS CUSTOMER_NAME,
+STREET_ADDRESS,
+CITY,
+STATE,
+ZIP,
+ORDER_DATE,
+PRODUCT_ID,
+DESCRIPTION,
+ORDER_QTY,
+ORDER_QTY * PRICE as REVENUE
+
+FROM CUSTOMER
+
+INNER JOIN CUSTOMER_ORDER
+ON CUSTOMER.CUSTOMER_ID = CUSTOMER_ORDER.CUSTOMER_ID
+
+INNER JOIN PRODUCT
+ON CUSTOMER_ORDER.PRODUCT_ID = PRODUCT.PRODUCT_ID
+
+------------------------------------------------------------
+
+SELECT
+CUSTOMER.CUSTOMER_ID,
+NAME AS CUSTOMER_NAME,
+SUM(ORDER_QTY * PRICE) AS TOTAL_REVENUE
+
+FROM CUSTOMER_ORDER
+
+INNER JOIN CUSTOMER
+ON CUSTOMER.CUSTOMER_ID = CUSTOMER_ORDER.CUSTOMER_ID
+
+INNER JOIN PRODUCT
+ON CUSTOMER_ORDER.PRODUCT_ID = PRODUCT.PRODUCT_ID
+
+GROUP BY 1,2
+
+----------------------------------------------------------------
+--Because we may want to see all customers, including ones that have no orders,
+-- we can use LEFT JOIN instead of INNER JOIN for all our join operations
+SELECT
+CUSTOMER.CUSTOMER_ID,
+NAME AS CUSTOMER_NAME,
+sum(ORDER_QTY * PRICE) as TOTAL_REVENUE
+
+FROM CUSTOMER
+
+LEFT JOIN CUSTOMER_ORDER
+ON CUSTOMER.CUSTOMER_ID = CUSTOMER_ORDER.CUSTOMER_ID
+
+LEFT JOIN PRODUCT
+ON CUSTOMER_ORDER.PRODUCT_ID = PRODUCT.PRODUCT_ID
+
+GROUP BY 1,2
+-------------------------------------------------------------------------------
+--we may want the values to default to 0 instead of null if there are no sales.
+---coalesce function
+SELECT
+CUSTOMER.CUSTOMER_ID,
+NAME AS CUSTOMER_NAME,
+coalesce(sum(ORDER_QTY * PRICE), 0) as TOTAL_REVENUE
+
+FROM CUSTOMER
+
+LEFT JOIN CUSTOMER_ORDER
+ON CUSTOMER.CUSTOMER_ID = CUSTOMER_ORDER.CUSTOMER_ID
+---never mix inner join and left join just write with one type
+LEFT JOIN PRODUCT
+ON CUSTOMER_ORDER.PRODUCT_ID = PRODUCT.PRODUCT_ID
+
+GROUP BY 1,2
+-----------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
