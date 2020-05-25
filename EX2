@@ -1,0 +1,231 @@
+SELECT * FROM station_data
+
+SELECT * FROM station_data
+WHERE YEAR = 2010
+
+-- EVERYTHING BUT 2010 USE != OR <>
+SELECT * FROM station_data
+WHERE YEAR != 2010
+
+SELECT * FROM station_data
+WHERE YEAR <> 2010
+
+
+-- BETWEEN (INCLUSIVE)
+SELECT * FROM station_data
+WHERE year BETWEEN 2005 AND 2010
+
+SELECT * FROM station_data
+WHERE YEAR>=2005 AND YEAR <=2010
+
+--BETWEEN (EXCLUSIVELY)
+SELECT * FROM station_data
+WHERE YEAR>2005 AND YEAR<2010
+
+SELECT * FROM station_data
+WHERE MONTH =2
+OR MONTH = 6
+OR MONTH = 9
+OR MONTH =12
+
+-- WE CAN USE 'IN' STATEMENT FOR OR
+SELECT * FROM station_data
+WHERE MONTH IN (3,6,9,12)
+
+-- EXCEPT USE NOT IN
+SELECT * FROM station_data
+WHERE MONTH NOT IN (3,6,9,12)
+
+-- 3,6,9,12 MONTH
+SELECT * FROM station_data
+WHERE MONTH % 3 = 0
+
+-- WHEN FIELD IS TEXT USE ' '
+SELECT * FROM station_data
+WHERE report_code = '513A63'
+
+SELECT * FROM station_data
+WHERE report_code IN ('513A63', '1F8A7B', 'EF616A')
+
+--report_code 길이가 0이 아닌
+SELECT * FROM station_data
+WHERE LENGTH(report_code) != 6
+
+-- WILD CARD % ANY NUMBER OF CHARACTERS
+-- _ MEANS ANY SINGLE CHARACTER
+
+SELECT * FROM station_data
+WHERE report_code LIKE 'A%'
+--IN REGEXP ALL CODE START WITH A
+SELECT * FROM station_data
+WHERE report_code REGEXP '^A.*$'
+
+--“B” as the first character and a “C” as the third character  and follow with any number of characters after the “C”
+SELECT * FROM station_data
+WHERE report_code LIKE 'B_C%'
+
+/* OTHER FUNCTIONS
+ abs() absolute value
+ coalesce() converts a possible null value into a default value if it is null
+ instr()  instr('THSDTX' 'TX')
+ check if a text string contains another text string;
+ if so it returns the index for the found position, and otherwise it returns 0 
+ trim('   TX   ')
+ remove extraneous space on both sides of a string
+ ltrim('  TX')
+ removes extraneous space on the left side of a string
+ rtrim('LA    ')
+ remove right side
+ random()
+ returns a psudorandom number 
+ replace('Tom Nield', 'Tom', 'Thomas')
+ substr('DOG',2,3)
+ extracts a range of characters from a string with their numeric positions
+ lower() turns all letters in a string to lower case
+ upper()
+*/
+
+/*
+DATE format
+YYYY-MM-DD
+get today’s date 
+SELECT DATE('now')
+ONE DAY BEFORE TODAY
+SELECT DATE('now','-1 day')
+SELECT DATE('NOW', '+3 month', '-1 day')
+---------------------------------------
+TIME FORMAT HH:MM:SS
+TIME VALUE OF 4:31:15
+SELECT '16:31:15'
+*
+CURRENT TIME
+SELECT TIME('now')
+SELECT TIME('16:31','+1 MINUTE')
+SELECT DATETIME('2015-12-13 16:04:11','-1 day','+3 hour')
+*/
+
+SELECT * FROM station_data
+WHERE tornado = true AND hail = true
+ 
+SELECT * FROM station_data
+WHERE tornado = 1 AND haiL =1
+
+/*
+If you are looking for just true values, you do not even have to use the = 1 expression. 
+Because the fields are already Boolean (behind the scenes, every WHERE condition 
+boils down to a Boolean expression), they inherently qualify by themselves.
+*/
+SELECT * FROM station_data
+WHERE tornado AND hail;
+
+SELECT * FROM station_data
+WHERE tornado = 0 AND hail = 1
+
+SELECT * FROM station_data
+WHERE NOT tornado AND hail
+
+--Null values cannot be determined with an =. 
+--You need to use the IS NULL or IS NOT NULL statements to identify null values.
+
+SELECT * FROM station_data
+WHERE snow_depth IS null
+
+/*
+Do not confuse nulls with empty text, which is two single quotes with nothing in them (i.e., '').
+ This also applies to whitespace text (i.e., ' '). These will be treated as values and never will
+  be considered null. A null is definitely not the same as 0 either, because 0 is a value, 
+  whereas null is an absence of a value*/
+
+SELECT * FROM station_data
+WHERE precipitation <=0.5
+
+SELECT * FROM station_data
+WHERE precipitation IS NULL OR precipitation <=0.5
+
+-- THE SAME RESULT AS ABOVE
+-- the coalesce() function, which will turn a possibly null value into a specified default value if it is null
+SELECT * FROM station_data
+WHERE coalesce(precipitation,0) <=0.5
+
+SELECT report_code, coalesce(precipitation,0) AS rainfall
+FROM station_data
+
+--GROUPING CONDITIONS
+
+SELECT * FROM station_data
+WHERE (rain = 1 and temperature <= 32)
+or snow_depth >0
+
+--You simply SELECT an expression of literals as in the following query,
+-- which will calculate a single value of 12:
+SELECT 5+7
+
+SELECT INSTR('TONY STARK', 'TONY')
+-- IT RETURNS 1
+
+-- 7/2 2
+-- 7%2 1
+-- BETEEN:  A BETWEEN 1 AND B
+-- IN: A IN (1,5,6,7)
+
+-- || CONCATENATE  CITY || ', ' || STATE
+-- STATE LIKE 'd_l%'
+-- STATE REGEXP '[A-Z]{2}'
+
+--SQLite has a set of aggregate functions you can use with a GROUP BY
+-- avg(X) omit null value,  count(X), count(*) max(X) min(X) sum(X) 
+--group_concat(X) Concatenates all non-null values in that column. 
+--You can also provide a second argument specifying a separator, like comma
+
+
+--rexon_metals data
+SELECT * FROM CUSTOMER_ORDER
+WHERE SHIP_DATE <'2015-05-21'
+
+SELECT DATE('NOW')
+SELECT DATE('NOW','+3 MONTH','-1 DAY')
+
+SELECT '16:31' <'08:31' -- RETURN FALSE
+SELECT TIME('NOW')
+
+SELECT TIME('16:31','+1 MINUTE')
+
+SELECT DATETIME('2015-12-13 16:04:11','-1 DAY','+3 HOUR')
+
+--STRING FORMAT TIME FUNCTION
+SELECT strftime('%d-%m-%Y','now')
+
+
+--weather station data
+---WHENEVER YOU MIX AND OR ALWAYS MAKES CLEAR
+select * from station_data
+WHERE (rain =1 AND temperature <=32)
+OR snow_depth >0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
