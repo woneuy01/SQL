@@ -159,6 +159,7 @@ SELECT 'A6' REGEXP '[ATUX][469]';  --A,OR,U,X
 SELECT 'B8' REGEXP '[ATUX][469]';
 
 --NEGATE CHARACTER RANGE
+-- don't want to have ATUX for the first letter and 469 for the second letter
 SELECT 'A6' REGEXP '[^ATUX][^469]'; -- FALSE
 SELECT 'B8' REGEXP '[^ATUX][^469]'; -- TRUE
 
