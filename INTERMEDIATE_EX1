@@ -32,6 +32,7 @@ QUANTITY,
     ) AS AVG_QUANTITY
 FROM CUSTOMER_ORDER c1
 
+이렇게 하는 것보다 join으로 아래와 같이 avg 계산하는 하는 것이 더 효울적
 -----------------------------------------
 SELECT CUSTOMER_ORDER_ID,
 CUSTOMER_ORDER.CUSTOMER_ID,
@@ -54,6 +55,7 @@ INNER JOIN
 ON CUSTOMER_ORDER.CUSTOMER_ID = cust_avgs.CUSTOMER_ID
 AND CUSTOMER_ORDER.PRODUCT_ID = cust_avgs.PRODUCT_ID
 
+이것보다 아래와 같이 CTE로 먼저 평균을 정의하고 하는게 더 깔끔하다.
 --COMMON TABLE EXPRESSION-------------------
 WITH CUST_AVGS AS (
     SELECT CUSTOMER_ID,
