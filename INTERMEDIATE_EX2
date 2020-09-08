@@ -159,5 +159,114 @@ ID	FIRST_NAME	LAST_NAME	TITLE	DEPARTMENT	MANAGER_ID
 20	Ashlin	Creamen	Manager	Operations	14
 21	Daniel	Licquorish	Analyst	Operations	20
 
+--This MANAGER_ID points to another EMPLOYEE record.
+--If you want to bring in Daniel and his superior's information, this isn't hard to do with a self join.
+
+SELECT e1.FIRST_NAME, 
+e1.LAST_NAME, 
+e1.TITLE,
+e2.FIRST_NAME AS MANAGER_FIRST_NAME,
+e2.LAST_NAME AS MANAGER_LAST_NAME
+
+FROM EMPLOYEE e1 INNER JOIN EMPLOYEE e2
+ON e1.MANAGER_ID = e2.ID
+
+WHERE e1.FIRST_NAME = 'Daniel'
+
+---
+FIRST_NAME	LAST_NAME	TITLE	MANAGER_FIRST_NAME	MANAGER_LAST_NAME
+Daniel	Licquorish	Analyst	Ashlin	Creamen
+
+
+--But what if you wanted to display the entire hierarchy above Daniel? 
+A recursion is a special type of common table expression (CTE). 
+Typically, you "seed" a starting value and then use UNION or
+UNION ALL to append the results of a query that uses each "seed", and the result becomes the next seed.
+
+-- generates a list of employee ID's hierarchical to Daniel
+
+WITH RECURSIVE hierarchy_of_daniel(x) AS (
+ SELECT 21 -- start with Daniel's ID
+ UNION ALL -- append each manager ID recursively
+ SELECT MANAGER_ID 
+ FROM hierarchy_of_daniel INNER JOIN EMPLOYEE
+ ON EMPLOYEE.ID = hierarchy_of_daniel.x -- employee ID must equal previous recursion
+)
+SELECT * FROM EMPLOYEE
+WHERE ID IN hierarchy_of_daniel;
+
+
+
+
+--It's harder to show the hierarchy for everyone at once, but there are ways.
+For instance, you can put a RECURSIVE operation in a subquery and use GROUP_CONCAT.
+
+SELECT e1.* , 
+
+(
+    WITH RECURSIVE hierarchy_of(x) AS (
+     SELECT e1.ID 
+     UNION ALL -- append each manager ID recursively
+     SELECT MANAGER_ID 
+     FROM hierarchy_of INNER JOIN EMPLOYEE
+     ON EMPLOYEE.ID = hierarchy_of.x -- employee ID must equal previous recursion
+     )
+
+    SELECT GROUP_CONCAT(ID) FROM EMPLOYEE e2
+    WHERE ID IN hierarchy_of
+) AS HIERARCHY_IDS
+
+FROM EMPLOYEE e1
+
+ID	FIRST_NAME	LAST_NAME	TITLE	DEPARTMENT	MANAGER_ID	HIERARCHY_IDS
+14	Harper	Argontt	Director	Operations	3	1,3,14
+15	Fabio	Treversh	Manager	Operations	14	1,3,14,15
+16	Gerard	Morforth	Analyst	Operations	15	1,3,14,15,16
+17	Stephanus	Palatino	Senior Analyst	Operations	15	1,3,14,15,17
+18	Jennilee	Withers	Analyst	Operations	15	1,3,14,15,18
+19	Desdemona	Farmar	Business Consultant	Operations	15	1,3,14,15,19
+
+Note recursive queries also can be used to improvise a set of consecutive values without creating a table. 
+For instance, we can generate a set of consecutive integers. Here is how you create a set of integers from 1 to 1000.
+
+WITH RECURSIVE my_integers(x) AS (
+    SELECT 1
+        UNION ALL
+    SELECT x + 1 
+    FROM my_integers
+    WHERE x < 1000
+)
+SELECT * FROM my_integers
+
+You can apply the same concept to generate a set of chronological dates. 
+This recursive query will generate all dates from today to '2030-12-31':
+
+WITH RECURSIVE my_dates(x) AS (
+    SELECT date('now')
+        UNION ALL
+    SELECT date(x, '+1 day')
+    FROM my_dates
+    WHERE x < '2030-12-31'
+)
+SELECT * FROM my_dates
+
+4.6 Sometimes it can be helpful to generate a "cartesian product", 
+or every possible combination between two or more data sets using a CROSS JOIN.
+
+We should use a cross join to resolve this problem. 
+For instance, we can leverage a CROSS JOIN query to generate every possible combination of PRODUCT_ID and CUSTOMER_ID.
+
+SELECT
+CUSTOMER_ID,
+PRODUCT_ID
+FROM CUSTOMER
+CROSS JOIN PRODUCT
+
+
+
+
+
+
+
 
 
