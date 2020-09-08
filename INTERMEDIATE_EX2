@@ -1,0 +1,163 @@
+2.5 - Unions
+To simply append two queries (with identical fields) together, put a UNION ALL between them.
+
+SELECT
+'FEB' AS MONTH,
+PRODUCT.PRODUCT_ID,
+PRODUCT_NAME,
+SUM(PRICE * QUANTITY) AS REV
+FROM PRODUCT LEFT JOIN CUSTOMER_ORDER
+ON PRODUCT.PRODUCT_ID = CUSTOMER_ORDER.PRODUCT_ID
+
+WHERE ORDER_DATE BETWEEN '2017-02-01' AND '2017-02-28'
+GROUP BY 1,2,3
+
+UNION ALL
+
+SELECT
+'MAR' AS MONTH,
+PRODUCT.PRODUCT_ID,
+PRODUCT_NAME,
+SUM(PRICE * QUANTITY) AS REV
+FROM PRODUCT LEFT JOIN CUSTOMER_ORDER
+ON PRODUCT.PRODUCT_ID = CUSTOMER_ORDER.PRODUCT_ID
+
+WHERE ORDER_DATE BETWEEN '2017-03-01' AND '2017-03-31'
+GROUP BY 1,2,3
+
+---Using UNION instead of UNION ALL will remove duplicates, which should not be necessary in this case.
+
+You should strive not to use unions as they often encourage bad, inefficient SQL. 
+Strive to use CASE statements or other tools instead. In this example, it would have been better to do this:
+
+2.6 - GROUP CONCAT
+
+A neat little trick you can do on some database platforms (like SQLite, MySQL, and PostgreSQL) is the group_concat() 
+aggregate function. This will concatenate all values in a column as an aggregation, and can be used in conjunction with a GROUP BY like MIN, MAX, AVG, etc.
+
+This shows a concatenated list of values of PRODUCT_ID's ordered for each ORDER_DATE.
+
+
+SELECT ORDER_DATE,
+group_concat(PRODUCT_ID) as product_ids_ordered
+
+FROM CUSTOMER_ORDER
+WHERE ORDER_DATE BETWEEN '2017-02-01' AND '2017-02-28'
+GROUP BY ORDER_DATE
+
+--Putting the DISTINCT keyword inside of it will only concatenate the DISTINCT product ID's.
+
+SELECT ORDER_DATE,
+group_concat(DISTINCT PRODUCT_ID) as product_ids_ordered
+
+FROM CUSTOMER_ORDER
+WHERE ORDER_DATE BETWEEN '2017-02-01' AND '2017-02-28'
+GROUP BY ORDER_DATE
+
+---GROUP_CONCAT is a helpful function to compress the results into a single record,
+in a single cell, often in a reporting context.
+--Note that GROUP_CONCAT is used in MySQL and SQLite, but is often called STRING_AGG on other platforms such as Oracle,
+PostgreSQL, and Microsoft SQL Server.
+
+Exercise 1
+Bring in all records for CUSTOMER_ORDER, but also bring in the total quantities ever ordered each given PRODUCT_ID and CUSTOMER_ID.
+**
+SELECT CUSTOMER_ORDER_ID,
+CUSTOMER_ORDER.CUSTOMER_ID,
+ORDER_DATE,
+CUSTOMER_ORDER.PRODUCT_ID,
+QUANTITY,
+sum_qty
+
+FROM CUSTOMER_ORDER
+INNER JOIN
+(
+    SELECT CUSTOMER_ID,
+    PRODUCT_ID,
+    SUM(QUANTITY) AS sum_qty
+    FROM CUSTOMER_ORDER
+    GROUP BY 1, 2
+) total_ordered
+
+ON CUSTOMER_ORDER.CUSTOMER_ID = total_ordered.CUSTOMER_ID
+AND CUSTOMER_ORDER.PRODUCT_ID = total_ordered.PRODUCT_ID
+
+--Or if you choose to use a common table expression...
+
+**WITH total_ordered AS (
+    SELECT CUSTOMER_ID,
+    PRODUCT_ID,
+    SUM(QUANTITY) AS sum_qty
+    FROM CUSTOMER_ORDER
+    GROUP BY 1, 2
+) 
+
+SELECT CUSTOMER_ORDER_ID,
+CUSTOMER_ORDER.CUSTOMER_ID,
+ORDER_DATE,
+CUSTOMER_ORDER.PRODUCT_ID,
+QUANTITY,
+sum_qty
+
+FROM CUSTOMER_ORDER INNER JOIN total_ordered
+
+ON CUSTOMER_ORDER.CUSTOMER_ID = total_ordered.CUSTOMER_ID
+AND CUSTOMER_ORDER.PRODUCT_ID = total_ordered.PRODUCT_ID
+
+
+
+4.5A Self Joins
+
+--We can join a table to itself by invoking it twice with two aliases.
+--This can be useful, for example, to look up the previous day's order quantity (if any) for a given CUSTOMER_ID and PRODUCT_ID:
+--전날 주문 물량
+SELECT o1.CUSTOMER_ORDER_ID,
+o1.CUSTOMER_ID,
+o1.PRODUCT_ID,
+o1.ORDER_DATE,
+o1.QUANTITY,
+o2.QUANTITY AS PREV_DAY_QUANTITY
+
+FROM CUSTOMER_ORDER o1
+LEFT JOIN CUSTOMER_ORDER o2
+
+ON o1.CUSTOMER_ID = o2.CUSTOMER_ID
+AND o1.PRODUCT_ID = o2.PRODUCT_ID
+AND o2.ORDER_DATE = date(o1.ORDER_DATE, '-1 day')
+
+WHERE o1.ORDER_DATE BETWEEN '2017-03-05' AND '2017-03-11'
+
+-- 전날이 아니라 직전 주문한 날 인경우 sub query 를 쓴다.
+
+SELECT ORDER_DATE,
+PRODUCT_ID,
+CUSTOMER_ID,
+QUANTITY,
+(
+    SELECT QUANTITY
+    FROM CUSTOMER_ORDER c2
+    WHERE c1.ORDER_DATE > c2.ORDER_DATE
+    AND c1.PRODUCT_ID = c2.PRODUCT_ID
+    AND c1.CUSTOMER_ID = c2.CUSTOMER_ID
+    ORDER BY ORDER_DATE DESC  -- 역순으로 가장 최근일자 선택 모든 항목마다 각각 query가 계산됨
+    LIMIT 1
+) as PREV_QTY
+FROM CUSTOMER_ORDER c1
+
+4.5B Recursive Self Joins (useful when there are hierarchical data)
+
+SELECT * FROM EMPLOYEE
+
+ID	FIRST_NAME	LAST_NAME	TITLE	DEPARTMENT	MANAGER_ID
+13	Pembroke	Killgus	Accountant I	Accounting	10
+14	Harper	Argontt	Director	Operations	3
+15	Fabio	Treversh	Manager	Operations	14
+16	Gerard	Morforth	Analyst	Operations	15
+17	Stephanus	Palatino	Senior Analyst	Operations	15
+18	Jennilee	Withers	Analyst	Operations	15
+19	Desdemona	Farmar	Business Consultant	Operations	15
+20	Ashlin	Creamen	Manager	Operations	14
+21	Daniel	Licquorish	Analyst	Operations	20
+
+
+
