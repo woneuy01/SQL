@@ -111,7 +111,7 @@ AND CUSTOMER_ORDER.PRODUCT_ID = total_ordered.PRODUCT_ID
 --We can join a table to itself by invoking it twice with two aliases.
 --This can be useful, for example, to look up the previous day's order quantity (if any) for a given CUSTOMER_ID and PRODUCT_ID:
 --전날 주문 물량
-SELECT o1.CUSTOMER_ORDER_ID,
+***SELECT o1.CUSTOMER_ORDER_ID,
 o1.CUSTOMER_ID,
 o1.PRODUCT_ID,
 o1.ORDER_DATE,
@@ -123,7 +123,7 @@ LEFT JOIN CUSTOMER_ORDER o2
 
 ON o1.CUSTOMER_ID = o2.CUSTOMER_ID
 AND o1.PRODUCT_ID = o2.PRODUCT_ID
-AND o2.ORDER_DATE = date(o1.ORDER_DATE, '-1 day')
+AND o2.ORDER_DATE = date(o1.ORDER_DATE, '-1 day') --전날 주문 물량
 
 WHERE o1.ORDER_DATE BETWEEN '2017-03-05' AND '2017-03-11'
 
